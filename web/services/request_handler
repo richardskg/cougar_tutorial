@@ -3,6 +3,8 @@
 namespace CougarTutorial;
 
 use Cougar\Security\Security;
+use Cougar\Cache\CacheFactory;
+use Cougar\PDO\PDO;
 use Cougar\RestService\AnnotatedRestService;
 
 // Initialize the application
@@ -11,17 +13,28 @@ require_once(__DIR__ . "/../../init.php");
 // Create a new Security context (required by Model Factory and Rest Service)
 $security = new Security();
 
+// Create the application cache object
+$cache = CacheFactory::getApplicationCache();
+
+// Create the database connection
+$pdo = new PDO("sqlite:" . __DIR__ . "/../../db/cougar_tutorial.db");
+
+// Create the Model factory
+$model_factory = new ModelFactory($security, $cache, $pdo);
+
 // Create User object
 $user = new User($security);
+
+// Create the State object
+$state = new State($security, $model_factory);
 
 // Create the AnnotatedWebService object to handle handle incoming REST requests
 $service = new AnnotatedRestService($security);
 
-// Tell the service object to bind web services from our Album object
+// Tell the service object to bind web services from our User and State objects
 $service->bindFromObject($user);
+$service->bindFromObject($state);
 
-// Finally, tell the service object to handle the REST request; this is a
-// terminal call; execution will stop here whether the service call was
-// successful or not
+// Handle the request
 $service->handleRequest();
 ?>
