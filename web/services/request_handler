@@ -1,0 +1,27 @@
+<?php
+
+namespace CougarTutorial;
+
+use Cougar\Security\Security;
+use Cougar\RestService\AnnotatedRestService;
+
+// Initialize the application
+require_once(__DIR__ . "/../../init.php");
+
+// Create a new Security context (required by Model Factory and Rest Service)
+$security = new Security();
+
+// Create User object
+$user = new User($security);
+
+// Create the AnnotatedWebService object to handle handle incoming REST requests
+$service = new AnnotatedRestService($security);
+
+// Tell the service object to bind web services from our Album object
+$service->bindFromObject($user);
+
+// Finally, tell the service object to handle the REST request; this is a
+// terminal call; execution will stop here whether the service call was
+// successful or not
+$service->handleRequest();
+?>
