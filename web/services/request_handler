@@ -6,6 +6,7 @@ use Cougar\Security\Security;
 use Cougar\Cache\CacheFactory;
 use Cougar\PDO\PDO;
 use Cougar\RestService\AnnotatedRestService;
+use CougarTutorial\Security\DbBasicAuthenticationProvider;
 
 // Initialize the application
 require_once(__DIR__ . "/../../init.php");
@@ -30,6 +31,11 @@ $state = new State($security, $model_factory);
 
 // Create the AnnotatedWebService object to handle handle incoming REST requests
 $service = new AnnotatedRestService($security);
+
+// Create the basic authentication provider and add it to the security object
+$authentication_provider =
+    new DbBasicAuthenticationProvider($service, $model_factory->UserPdo());
+$security->addAuthenticationProvider($authentication_provider);
 
 // Tell the service object to bind web services from our User and State objects
 $service->bindFromObject($user);

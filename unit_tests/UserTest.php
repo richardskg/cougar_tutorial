@@ -2,11 +2,17 @@
 namespace CougarTutorial\UnitTests;
 
 use CougarTutorial\User;
+use Cougar\Security\Identity;
 
 // Initialize the application
 require_once(__DIR__ . "/../init.php");
 
 class UserTest extends \PHPUnit_Framework_TestCase {
+
+    /**
+     * @var \Cougar\Security\Security
+     */
+    protected $security;
 
     /**
      * @var User
@@ -15,8 +21,8 @@ class UserTest extends \PHPUnit_Framework_TestCase {
 
     protected function setUp()
     {
-        $security = $this->getMock("\\Cougar\\Security\\Security");
-        $this->object = new User($security);
+        $this->security = $this->getMock("\\Cougar\\Security\\Security");
+        $this->object = new User($this->security);
     }
 
     /**
@@ -25,6 +31,23 @@ class UserTest extends \PHPUnit_Framework_TestCase {
     public function testGreet()
     {
         $this->assertEquals("Welcome, visitor", $this->object->greet());
+    }
+
+    /**
+     * @covers CougarTutorial\User::greet
+     */
+    public function testGreetWithIdentity()
+    {
+        $identity = new Identity("unit_test", array("givenName" => "John"));
+
+        $this->security->expects($this->once())
+            ->method("isAuthenticated")
+            ->will($this->returnValue(true));
+        $this->security->expects($this->once())
+            ->method("getIdentity")
+            ->will($this->returnValue($identity));
+
+        $this->assertEquals("Welcome, John", $this->object->greet());
     }
 
     /**

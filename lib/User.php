@@ -33,13 +33,22 @@ class User implements iUser
      *
      * @Path /greeting
      * @Methods GET
+     * @Authentication optional
      * @XmlRootElement greeting
      *
      * @return string Greeting
      */
     public function greet()
     {
-        return "Welcome, visitor";
+        if ($this->security->isAuthenticated())
+        {
+            $identity = $this->security->getIdentity();
+            return "Welcome, " . $identity->givenName;
+        }
+        else
+        {
+            return "Welcome, visitor";
+        }
     }
 
     /**

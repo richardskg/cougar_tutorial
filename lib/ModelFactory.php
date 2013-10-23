@@ -40,6 +40,39 @@ class ModelFactory
      **************************************************************************/
 
     /**
+     * Returns a new instance of a User model
+     *
+     * @param mixed $object
+     *   Import values from given object or assoc. array
+     * @param string $view
+     *   Set initial view
+     * @param bool $strict
+     *   Whether to be strict on import
+     * @return \CougarTutorial\Models\User
+     */
+    public function User($object = null, $view = null, $strict = true)
+    {
+        return new Models\User($object, $view, $strict);
+    }
+
+    /**
+     * Returns a new instance of a UserPDO model
+     *
+     * @param mixed $object
+     *   Import values from given object or assoc. array
+     * @param string $view
+     *   Set initial view
+     * @param bool $strict
+     *   Whether to be strict on import
+     * @return \CougarTutorial\Models\UserPdo
+     */
+    public function UserPdo($object = null, $view = null, $strict = true)
+    {
+        return new Models\UserPdo($this->security, $this->cache, $this->pdo,
+            $object, $view, $strict);
+    }
+
+    /**
      * Returns a new instance of a State model
      *
      * @param mixed $object
