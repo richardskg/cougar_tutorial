@@ -2,15 +2,18 @@
 
 namespace CougarTutorial\UnitTests;
 
-use Cougar\Util\QueryParameter;
 use CougarTutorial\State;
+use CougarTutorial\Security\ActionAuthorizationProvider;
+use CougarTutorial\Security\StateModelAuthorizationProvider;
+use Cougar\Security\Security;
+use Cougar\Util\QueryParameter;
 
 require_once(__DIR__ . "/../init.php");
 
 class StateTest extends \PHPUnit_Framework_TestCase {
 
     /**
-     * @var \CougarTutorial\StateModelFactory State object to test
+     * @var \CougarTutorial\ModelFactory State object to test
      */
     protected $factory;
 
@@ -22,7 +25,12 @@ class StateTest extends \PHPUnit_Framework_TestCase {
     protected function setUp()
     {
         // Create the Security context mock
-        $security = $this->getMock("\\Cougar\\Security\\Security");
+        $security = new Security();
+
+        // Add the authorization providers
+        $security->addAuthorizationProvider(new ActionAuthorizationProvider());
+        $security->addAuthorizationProvider(
+            new StateModelAuthorizationProvider());
 
         // Create the StateModelFactory mock
         $this->factory = $this->getMockBuilder(

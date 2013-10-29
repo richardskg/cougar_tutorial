@@ -3,7 +3,12 @@
 namespace CougarTutorial\UnitTests;
 
 use CougarTutorial\Models\StatePdo;
+use CougarTutorial\Security\StateModelAuthorizationProvider;
 use Cougar\PDO\PDO;
+use Cougar\Security\Identity;
+use Cougar\Security\Security;
+use Cougar\Security\iAuthenticationProvider;
+use Cougar\Exceptions\Exception;
 
 require_once(__DIR__ . "/../init.php");
 
@@ -31,8 +36,12 @@ class StatePdoTest extends \PHPUnit_Framework_TestCase {
 	 * This method is called before a test is executed.
 	 */
 	protected function setUp() {
-		// Get security object mock
-        $this->security = $this->getMock("\\Cougar\\Security\\Security");
+        // Create a real security context
+        $this->security = new Security();
+
+        // Add the authorization provider
+        $this->security->addAuthorizationProvider(
+            new StateModelAuthorizationProvider());
 
         // Create mock cache to disable it and ensure everything goes through DB
         $this->cache = $this->getMock("\\Cougar\\Cache\\Cache");
@@ -102,6 +111,7 @@ class StatePdoTest extends \PHPUnit_Framework_TestCase {
 			$this->pdo, array("stateId" => "confusion"));
 		$this->fail("Expected exception was not thrown");
 	}
+
 	/**
 	 * Tests getting the list of states
 	 * 
@@ -113,4 +123,219 @@ class StatePdoTest extends \PHPUnit_Framework_TestCase {
 		$state_list = $state->query();
 		$this->assertCount(50, $state_list);
 	}
+
+    /**
+     * Attempt to add a new state
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreate()
+    {
+        // Add the authorization provider
+        $this->security->addAuthorizationProvider(
+            new StateModelAuthorizationProvider());
+
+        // Load the state information
+        $new_state = new StatePdo($this->security, $this->cache, $this->pdo);
+
+        $new_state->stateId = "CN";
+        $new_state->name = "Confusion";
+        $new_state->largestCity = "Clueless";
+        $new_state->save();
+    }
+
+    /**
+     * Attempt to add a new state
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreateWithIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("nobody@example.com", array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $new_state = new StatePdo($this->security, $this->cache, $this->pdo);
+
+        $new_state->stateId = "CN";
+        $new_state->name = "Confusion";
+        $new_state->largestCity = "Clueless";
+        $new_state->save();
+    }
+
+    /**
+     * Attempt to add a new state
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreateWithAdminIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $new_state = new StatePdo($this->security, $this->cache, $this->pdo);
+
+        $new_state->stateId = "CN";
+        $new_state->name = "Confusion";
+        $new_state->largestCity = "Clueless";
+        $new_state->save();
+    }
+
+    /**
+     * Attempt to modify the state
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testModifyNoIdentity()
+    {
+        // Load the state information
+        $california = new StatePdo($this->security, $this->cache, $this->pdo,
+            array("stateId" => "CA"));
+
+        $california->largestCity = "San Francisco";
+        $california->save();
+    }
+
+    /**
+     * Attempt to modify the state with an ordinary identity
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testModifyWithIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("nobody@example.com", array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $california = new StatePdo($this->security, $this->cache, $this->pdo,
+            array("stateId" => "CA"));
+
+        $california->largestCity = "San Francisco";
+        $california->save();
+    }
+
+    /**
+     * Attempt to modify the state with an admin identity
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     */
+    public function testModifyLargestCityWithAdminIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $california = new StatePdo($this->security, $this->cache, $this->pdo,
+            array("stateId" => "CA"));
+
+        $california->largestCity = "San Francisco";
+        $california->population = 100000000;
+        $california->save();
+        $this->assertEquals("San Francisco", $california->largestCity);
+        $this->assertEquals(100000000, $california->population);
+    }
+
+    /**
+     * Attempt to modify the state with an admin identity
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\BadRequestException
+     */
+    public function testModifyPopulationZeroWithAdminIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $california = new StatePdo($this->security, $this->cache, $this->pdo,
+            array("stateId" => "CA"));
+
+        $california->population = 0;
+        $california->save();
+    }
+
+    /**
+     * Attempt to modify the state with an admin identity
+     *
+     * @covers CougarTutorial\StatePdo::__construct
+     * @covers CougarTutorial\StatePdo::save
+     * @expectedException \Cougar\Exceptions\BadRequestException
+     */
+    public function testModifyNameWithAdminIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new StatePdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Load the state information
+        $california = new StatePdo($this->security, $this->cache, $this->pdo,
+            array("stateId" => "CA"));
+
+        $california->name = "Calif";
+        $california->save();
+    }
 }
+
+class StatePdoModelTestIdentity implements iAuthenticationProvider
+{
+    public function __construct($identity)
+    {
+        if (! class_exists("PHPUnit_Framework_TestCase", false))
+        {
+            throw new Exception(
+                "A Test Identity can only be used in a unit test");
+        }
+
+        $this->identity = $identity;
+    }
+
+    public function authenticate()
+    {
+        return $this->identity;
+    }
+
+    protected $identity;
+}
+?>

@@ -7,12 +7,20 @@ use Cougar\Cache\CacheFactory;
 use Cougar\PDO\PDO;
 use Cougar\RestService\AnnotatedRestService;
 use CougarTutorial\Security\DbBasicAuthenticationProvider;
+use CougarTutorial\Security\ActionAuthorizationProvider;
+use CougarTutorial\Security\StateModelAuthorizationProvider;
+use CougarTutorial\Security\UserModelAuthorizationProvider;
 
 // Initialize the application
 require_once(__DIR__ . "/../../init.php");
 
 // Create a new Security context (required by Model Factory and Rest Service)
 $security = new Security();
+
+// Add the authorization providers to the security context
+$security->addAuthorizationProvider(new ActionAuthorizationProvider());
+$security->addAuthorizationProvider(new StateModelAuthorizationProvider());
+$security->addAuthorizationProvider(new UserModelAuthorizationProvider());
 
 // Create the application cache object
 $cache = CacheFactory::getApplicationCache();
@@ -24,7 +32,7 @@ $pdo = new PDO("sqlite:" . __DIR__ . "/../../db/cougar_tutorial.db");
 $model_factory = new ModelFactory($security, $cache, $pdo);
 
 // Create User object
-$user = new User($security);
+$user = new User($security, $model_factory);
 
 // Create the State object
 $state = new State($security, $model_factory);
@@ -36,6 +44,9 @@ $service = new AnnotatedRestService($security);
 $authentication_provider =
     new DbBasicAuthenticationProvider($service, $model_factory->UserPdo());
 $security->addAuthenticationProvider($authentication_provider);
+
+// Add the database connection to the service object to coordinate transactions
+$service->addTransactionCoordinator($pdo);
 
 // Tell the service object to bind web services from our User and State objects
 $service->bindFromObject($user);

@@ -2,7 +2,7 @@
 
 namespace CougarTutorial;
 
-use Cougar\Autoload\FlexAutoload;
+use CougarTutorial\Security\ActionAuthorizationQuery;
 use Cougar\Security\iSecurity;
 
 /**
@@ -21,8 +21,7 @@ class State implements iState
      * @param ModelFactory $factory
      *   Model factory
      */
-    public function __construct(iSecurity $security,
-        ModelFactory $factory)
+    public function __construct(iSecurity $security, ModelFactory $factory)
     {
         // Store the reference to the security context and model factory
         $this->security = $security;
@@ -49,6 +48,13 @@ class State implements iState
      */
     public function getStateList(array $query = array())
     {
+        // Make sure the user is authorized to get a state list
+        $auth_query = new ActionAuthorizationQuery();
+        $auth_query->action = "query";
+        $auth_query->type = "state";
+        $this->security->authorize("action", $auth_query);
+
+        // Get the state list
         $state_model = $this->factory->StatePdo();
         return $state_model->query($query);
     }
@@ -67,6 +73,13 @@ class State implements iState
     {
         // Get the state model for the given state
         $state_model = $this->factory->StatePdo(array("id" => $id));
+
+        // Make sure the user is authorized to get this state
+        $auth_query = new ActionAuthorizationQuery();
+        $auth_query->action = "read";
+        $auth_query->type = "state";
+        $auth_query->object = $state_model;
+        $this->security->authorize("action", $auth_query);
 
         // Return a model detached from the database
         return $this->factory->State($state_model);

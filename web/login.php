@@ -6,6 +6,7 @@ namespace CougarTutorial;
 
 use CougarTutorial\Models\UserPdo;
 use CougarTutorial\Security\UsernamePasswordCredentials;
+use CougarTutorial\Security\UserModelAuthorizationProvider;
 use Cougar\Security\Security;
 use Cougar\Cache\CacheFactory;
 use Cougar\PDO\PDO;
@@ -32,6 +33,9 @@ else
 
     // Create a new Security context
     $security = new Security();
+
+    // Add the User Model authorization provider
+    $security->addAuthorizationProvider(new UserModelAuthorizationProvider());
 
     // Create the application cache object
     $cache = CacheFactory::getApplicationCache();

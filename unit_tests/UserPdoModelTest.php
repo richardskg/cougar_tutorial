@@ -3,8 +3,12 @@
 namespace CougarTutorial\UnitTests;
 
 use CougarTutorial\Models\UserPdo;
-use Cougar\PDO\PDO;
+use CougarTutorial\Security\UserModelAuthorizationProvider;
 use CougarTutorial\Security\UsernamePasswordCredentials;
+use Cougar\PDO\PDO;
+use Cougar\Security\Identity;
+use Cougar\Security\Security;
+use Cougar\Security\iAuthenticationProvider;
 
 require_once(__DIR__ . "/../init.php");
 
@@ -32,8 +36,12 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
 	 * This method is called before a test is executed.
 	 */
 	protected function setUp() {
-		// Get security object mock
-        $this->security = $this->getMock("\\Cougar\\Security\\Security");
+        // Create a real security context
+        $this->security = new Security();
+
+        // Add the authorization provider
+        $this->security->addAuthorizationProvider(
+            new UserModelAuthorizationProvider());
 
         // Create mock cache to disable it and ensure everything goes through DB
         $this->cache = $this->getMock("\\Cougar\\Cache\\Cache");
@@ -63,22 +71,97 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
      */
     public function testCreateUser()
     {
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        $user = $this->readUser($id);
+
+        $this->assertEquals("John", $user->givenName);
+        $this->assertEquals("Doe", $user->lastName);
+        $this->assertEquals("john.doe@example.com", $user->emailAddress);
+        $this->assertEquals(sha1("Password"), $user->password);
+        $this->assertFalse($user->admin);
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @covers \CougarTutorial\Models\UserPdo::__query
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreateAdminUser()
+    {
         $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
 
         $new_user->givenName = "John";
         $new_user->lastName = "Doe";
-        $new_user->emailAddress = "john.doe@some.tld";
+        $new_user->emailAddress = "john.doe@example.com";
+        $new_user->password = "Password";
+        $new_user->admin = true;
+
+        $new_user->save();
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @covers \CougarTutorial\Models\UserPdo::__query
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreateAdminUserWithIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("nobody@example.com", array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Create a model for the new user
+        $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
+
+        $new_user->givenName = "John";
+        $new_user->lastName = "Doe";
+        $new_user->emailAddress = "john.doe@example.com";
+        $new_user->password = "Password";
+        $new_user->admin = true;
+
+        $new_user->save();
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @covers \CougarTutorial\Models\UserPdo::__query
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testCreateUserWithIdentity()
+    {
+        // Create a new identity with the information we want
+        $identity = new Identity("nobody@example.com", array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Create a model for the new user
+        $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
+
+        $new_user->givenName = "John";
+        $new_user->lastName = "Doe";
+        $new_user->emailAddress = "john.doe@example.com";
         $new_user->password = "Password";
 
         $new_user->save();
-
-        $new_user->__setView("identity");
-        $user_list = $new_user->query();
-        $this->assertCount(1, $user_list);
-        $this->assertEquals("John", $user_list[0]["givenName"]);
-        $this->assertEquals("Doe", $user_list[0]["lastName"]);
-        $this->assertEquals("john.doe@some.tld", $user_list[0]["emailAddress"]);
-        $this->assertFalse((bool) $user_list[0]["admin"]);
     }
 
     /**
@@ -86,85 +169,325 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
      * @covers \CougarTutorial\Models\UserPdo::__save
      * @covers \CougarTutorial\Models\UserPdo::__query
      */
-    public function testCreateUserAdministrative()
+    public function testCreateAdminUserWithAdminIdentity()
     {
-        $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
 
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Create a model for the new user
+        $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
         $new_user->givenName = "John";
         $new_user->lastName = "Doe";
-        $new_user->emailAddress = "john.doe@some.tld";
+        $new_user->emailAddress = "john.doe@example.com";
         $new_user->password = "Password";
         $new_user->admin = true;
 
         $new_user->save();
 
-        $new_user->__setView("identity");
-        $user_list = $new_user->query();
-        $this->assertCount(1, $user_list);
-        $this->assertEquals("John", $user_list[0]["givenName"]);
-        $this->assertEquals("Doe", $user_list[0]["lastName"]);
-        $this->assertEquals("john.doe@some.tld", $user_list[0]["emailAddress"]);
-        $this->assertTrue((bool) $user_list[0]["admin"]);
+        $user = $this->readUser("john.doe@example.com");
+
+        $this->assertEquals("John", $user->givenName);
+        $this->assertEquals("Doe", $user->lastName);
+        $this->assertEquals("john.doe@example.com", $user->emailAddress);
+        $this->assertEquals(sha1("Password"), $user->password);
+        $this->assertTrue($user->admin);
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @depends testCreateUser
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testReadUser()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Get the user
+        $user = $this->readUser($id);
     }
 
     /**
      * @covers \CougarTutorial\Models\UserPdo::__construct
      * @depends testCreateUser
      */
-    public function testGetUser()
+    public function testReadUserWithIdentity()
     {
         // Create the user
-        $this->testCreateUser();
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("john.doe@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
 
         // Get the user
-        $user = new UserPdo($this->security, $this->cache, $this->pdo,
-            array("id" => "john.doe@some.tld"));
+        $user = $this->readUser($id);
 
         $this->assertEquals("John", $user->givenName);
         $this->assertEquals("Doe", $user->lastName);
-        $this->assertEquals("john.doe@some.tld", $user->emailAddress);
+        $this->assertEquals("john.doe@example.com", $user->emailAddress);
         $this->assertEquals("8be3c943b1609fffbfc51aad666d0a04adf83c9d",
             $user->password);
         $this->assertEquals(false, $user->admin);
+    }
 
-        return $user;
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @depends testCreateUser
+     */
+    public function testReadUserWithAdminIdentity()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        $this->assertEquals("John", $user->givenName);
+        $this->assertEquals("Doe", $user->lastName);
+        $this->assertEquals("john.doe@example.com", $user->emailAddress);
+        $this->assertEquals("8be3c943b1609fffbfc51aad666d0a04adf83c9d",
+            $user->password);
+        $this->assertEquals(false, $user->admin);
+    }
+
+    /**
+     * We can't test updating without an identity since we can't read the record
+     * without an identity.
+     */
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @depends testReadUserWithIdentity
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testUpdateUserWithIdentity()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("nodobdy@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        // Update the fields
+        $user->givenName = "Mary";
+        $user->lastName = "Jones";
+        $user->save();
     }
 
     /**
      * @covers \CougarTutorial\Models\UserPdo::__construct
      * @covers \CougarTutorial\Models\UserPdo::__save
-     * @depends testGetUser
+     * @depends testReadUserWithIdentity
      */
-    public function testUpdateUser(\CougarTutorial\Models\UserPdo $user)
+    public function testUpdateUserWithUserIdentity()
     {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("john.doe@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
         // Update the fields
         $user->givenName = "Mary";
         $user->lastName = "Jones";
-        $user->password = "Abc123";
+        $user->password = "abc123";
+        $user->save();
+
+        // Get the modified user
+        $mod_user = $this->readUser($id);
+
+        $this->assertEquals("Mary", $mod_user->givenName);
+        $this->assertEquals("Jones", $mod_user->lastName);
+        $this->assertEquals("john.doe@example.com", $mod_user->emailAddress);
+        $this->assertEquals(sha1("abc123"), $mod_user->password);
+        $this->assertEquals(false, $user->admin);
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @depends testReadUserWithIdentity
+     * @expectedException \Cougar\Exceptions\BadRequestException
+     */
+    public function testUpdateUserWithUserIdentitySetAdmin()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("john.doe@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        // Update the fields
+        $user->admin = true;
+        $user->save();
+    }
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__save
+     * @depends testReadUserWithIdentity
+     */
+    public function testUpdateUserWithAdminIdentity()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        // Update the fields
+        $user->givenName = "Mary";
+        $user->lastName = "Jones";
+        $user->password = "abc123";
         $user->admin = true;
         $user->save();
 
-        // Get the user to make sure changes were saved
-        $user_list = $user->query();
-        $this->assertCount(1, $user_list);
-        $this->assertEquals("Mary", $user_list[0]["givenName"]);
-        $this->assertEquals("Jones", $user_list[0]["lastName"]);
-        $this->assertEquals("john.doe@some.tld", $user_list[0]["emailAddress"]);
+        // Get the modified user
+        $mod_user = $this->readUser($id);
+
+        $this->assertEquals("Mary", $mod_user->givenName);
+        $this->assertEquals("Jones", $mod_user->lastName);
+        $this->assertEquals("john.doe@example.com", $mod_user->emailAddress);
+        $this->assertEquals(sha1("abc123"), $mod_user->password);
+        $this->assertEquals(true, $user->admin);
+    }
+
+    /**
+     * We can't test deleting without an identity since we can't read the record
+     * without an identity.
+     */
+
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__delete
+     * @depends testCreateUser
+     * @expectedException \Cougar\Exceptions\AccessDeniedException
+     */
+    public function testDeleteUserWithIdentity()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("nobody@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        // Delete the user
+        $user->delete();
     }
 
     /**
      * @covers \CougarTutorial\Models\UserPdo::__construct
      * @covers \CougarTutorial\Models\UserPdo::__delete
-     * @depends testGetUser
+     * @depends testCreateUser
      */
-    public function testDeleteUser(\CougarTutorial\Models\UserPdo $user)
+    public function testDeleteUserWithUserIdentity()
     {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("john.doe@example.com",
+            array("admin" => false));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
         // Delete the user
         $user->delete();
+    }
 
-        // Get the user to make sure changes were saved
-        $user_list = $user->query();
-        $this->assertCount(0, $user_list);
+    /**
+     * @covers \CougarTutorial\Models\UserPdo::__construct
+     * @covers \CougarTutorial\Models\UserPdo::__delete
+     * @depends testCreateUser
+     */
+    public function testDeleteUserWithAdminIdentity()
+    {
+        // Create the user
+        $id = $this->createUser();
+
+        // Create a new identity with the information we want
+        $identity = new Identity("admin@example.com", array("admin" => true));
+
+        // Add our test authentication provider
+        $identity_provider = new UserPdoModelTestIdentity($identity);
+        $this->security->addAuthenticationProvider($identity_provider);
+        $this->security->authenticate();
+
+        // Get the user
+        $user = $this->readUser($id);
+
+        // Delete the user
+        $user->delete();
     }
 
     /**
@@ -178,7 +501,7 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
 
         $user = new UserPdo($this->security, $this->cache, $this->pdo);
         $credentials = new UsernamePasswordCredentials();
-        $credentials->username = "john.doe@some.tld";
+        $credentials->username = "john.doe@example.com";
         $credentials->password = "Password";
         $identity = $user->getIdentity($credentials);
 
@@ -189,11 +512,11 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
         $this->assertArrayHasKey("lastName", $identity);
         $this->assertArrayHasKey("admin", $identity);
 
-        $this->assertEquals("john.doe@some.tld", $identity["id"]);
-        $this->assertEquals("john.doe@some.tld", $identity["emailAddress"]);
+        $this->assertEquals("john.doe@example.com", $identity["id"]);
+        $this->assertEquals("john.doe@example.com", $identity["emailAddress"]);
         $this->assertEquals("John", $identity["givenName"]);
         $this->assertEquals("Doe", $identity["lastName"]);
-        $this->assertFalse($identity["admin"]);
+        $this->assertTrue($identity["admin"]);
     }
 
     /**
@@ -207,10 +530,58 @@ class UserPdoTest extends \PHPUnit_Framework_TestCase {
 
         $user = new UserPdo($this->security, $this->cache, $this->pdo);
         $credentials = new UsernamePasswordCredentials();
-        $credentials->username = "john.doe@some.tld";
+        $credentials->username = "john.doe@example.com";
         $credentials->password = "Bad password";
         $identity = $user->getIdentity($credentials);
 
         $this->assertNull($identity);
     }
+
+    /**
+     * Creates a standard user
+     */
+    protected function createUser()
+    {
+        $new_user = new UserPdo($this->security, $this->cache, $this->pdo);
+
+        $new_user->givenName = "John";
+        $new_user->lastName = "Doe";
+        $new_user->emailAddress = "john.doe@example.com";
+        $new_user->password = "Password";
+
+        $new_user->save();
+
+        return $new_user->emailAddress;
+    }
+
+    /**
+     * Reads the given user
+     */
+    protected function readUser($id)
+    {
+        return new UserPdo($this->security, $this->cache, $this->pdo,
+            array("id" => $id));
+    }
 }
+
+class UserPdoModelTestIdentity implements iAuthenticationProvider
+{
+    public function __construct($identity)
+    {
+        if (! class_exists("PHPUnit_Framework_TestCase", false))
+        {
+            throw new Exception(
+                "A Test Identity can only be used in a unit test");
+        }
+
+        $this->identity = $identity;
+    }
+
+    public function authenticate()
+    {
+        return $this->identity;
+    }
+
+    protected $identity;
+}
+?>
