@@ -63,7 +63,7 @@ class User implements iUser
      * @Methods POST
      * @Accepts json
      * @Body user object
-     * @Authentication required
+     * @Authentication optional
      * @XmlRootElement user
      *
      * @param mixed $user
@@ -98,6 +98,7 @@ class User implements iUser
      * Gets the user identified by the given User ID
      *
      * @Path /user/:id
+     * @Path /user
      * @Methods GET
      * @Authentication required
      * @XmlRootElement user
@@ -108,6 +109,12 @@ class User implements iUser
      */
     public function getUser($id)
     {
+        // See if we need to grab the identity's id
+        if (! $id && $this->security->isAuthenticated())
+        {
+            $id = $this->security->getIdentity()->id;
+        }
+
         // Get the user
         $user = $this->factory->UserPdo(array("id" => $id));
 
@@ -216,3 +223,4 @@ class User implements iUser
      */
     protected $factory;
 }
+?>

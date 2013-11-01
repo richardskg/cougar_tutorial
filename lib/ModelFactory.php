@@ -105,6 +105,40 @@ class ModelFactory
             $object, $view, $strict);
     }
 
+    /**
+     * Returns a new instance of a VisitedState model
+     *
+     * @param mixed $object
+     *   Import values from given object or assoc. array
+     * @param string $view
+     *   Set initial view
+     * @param bool $strict
+     *   Whether to be strict on import
+     * @return \CougarTutorial\Models\VisitedState
+     */
+    public function VisitedState($object = null, $view = null, $strict = true)
+    {
+        return new Models\VisitedState($object, $view, $strict);
+    }
+
+    /**
+     * Returns a new instance of a VisitedStatePdo Model
+     *
+     * @param mixed $object
+     *   Import values from given object or assoc. array
+     * @param string $view
+     *   Set initial view
+     * @param bool $strict
+     *   Whether to be strict on import
+     * @return \CougarTutorial\Models\VisitedStatePdo
+     */
+    public function VisitedStatePdo($object = null, $view = null,
+        $strict = true)
+    {
+        return new Models\VisitedStatePdo($this->security, $this->cache,
+            $this->pdo, $object, $view, $strict);
+    }
+
 
     /***************************************************************************
      * PROTECTED PROPERTIES AND METHODS

@@ -9,6 +9,7 @@ use Cougar\RestService\AnnotatedRestService;
 use CougarTutorial\Security\DbBasicAuthenticationProvider;
 use CougarTutorial\Security\ActionAuthorizationProvider;
 use CougarTutorial\Security\StateModelAuthorizationProvider;
+use CougarTutorial\Security\VisitedStateModelAuthorizationProvider;
 use CougarTutorial\Security\UserModelAuthorizationProvider;
 
 // Initialize the application
@@ -20,6 +21,8 @@ $security = new Security();
 // Add the authorization providers to the security context
 $security->addAuthorizationProvider(new ActionAuthorizationProvider());
 $security->addAuthorizationProvider(new StateModelAuthorizationProvider());
+$security->addAuthorizationProvider(
+    new VisitedStateModelAuthorizationProvider());
 $security->addAuthorizationProvider(new UserModelAuthorizationProvider());
 
 // Create the application cache object
@@ -37,6 +40,9 @@ $user = new User($security, $model_factory);
 // Create the State object
 $state = new State($security, $model_factory);
 
+// Create the visited state objct
+$visited_state = new VisitedState($security, $model_factory);
+
 // Create the AnnotatedWebService object to handle handle incoming REST requests
 $service = new AnnotatedRestService($security);
 
@@ -51,6 +57,7 @@ $service->addTransactionCoordinator($pdo);
 // Tell the service object to bind web services from our User and State objects
 $service->bindFromObject($user);
 $service->bindFromObject($state);
+$service->bindFromObject($visited_state);
 
 // Handle the request
 $service->handleRequest();
