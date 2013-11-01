@@ -4,4 +4,4 @@ The Cougar Tutorial is designed to introduce you to most of the features of the 
 
 This repo contains all the code used during the tutorial. It is broken up into each individual step in the tutorial. To get the code for a particular step, simply checkout the appropriate branch.
 
-[Get Started](/wiki)
+[Get Started](https://github.com/alfmel/cougar_tutorial/wiki)
