@@ -41,7 +41,7 @@ class State implements iState
      * @Methods GET
      * @GetQuery query
      * @XmlRootElement states
-     * @XmlElement state
+     * @XmlObjectName state
      *
      * @param array $query
      *   List of query parameters
