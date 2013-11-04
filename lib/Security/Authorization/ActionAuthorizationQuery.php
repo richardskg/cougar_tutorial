@@ -10,7 +10,7 @@ use Cougar\Model\Struct;
 class ActionAuthorizationQuery extends Struct
 {
     /**
-     * The action being performed (one of create, read, update, or delete
+     * The action being performed (one of create, read, update, or delete)
      *
      * @var string
      */
