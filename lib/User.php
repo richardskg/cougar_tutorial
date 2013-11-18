@@ -63,7 +63,7 @@ class User implements iUser
      * @Methods POST
      * @Accepts json
      * @Body user object
-     * @Authentication required
+     * @Authentication optional
      * @XmlRootElement user
      *
      * @param mixed $user
