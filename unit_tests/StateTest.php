@@ -60,8 +60,6 @@ class StateTest extends \PHPUnit_Framework_TestCase {
             ->method("StatePdo")
             ->with()
             ->will($this->returnValue($state_pdo_model));
-        $this->factory->expects($this->never())
-            ->method("State");
 
         $state_list = $this->object->getStateList();
         $this->assertCount(0, $state_list);
@@ -87,8 +85,6 @@ class StateTest extends \PHPUnit_Framework_TestCase {
             ->method("StatePdo")
             ->with(null, null, true)
             ->will($this->returnValue($state_pdo_model));
-        $this->factory->expects($this->never())
-            ->method("State");
 
         $state_list = $this->object->getStateList($query_params);
         $this->assertCount(0, $state_list);
@@ -115,12 +111,8 @@ class StateTest extends \PHPUnit_Framework_TestCase {
             ->method("StatePdo")
             ->with($params, null, true)
             ->will($this->returnValue($state_pdo_model));
-        $this->factory->expects($this->once())
-            ->method("State")
-            ->with($state_pdo_model, null, true)
-            ->will($this->returnValue($state_model));
 
         $state = $this->object->getState("UT");
-        $this->assertInstanceOf("\\CougarTutorial\\Models\\State", $state);
+        $this->assertInstanceOf("\\CougarTutorial\\Models\\StatePdo", $state);
     }
 }
