@@ -43,7 +43,7 @@ $user = new User($security, $model_factory);
 // Create the State object
 $state = new State($security, $model_factory);
 
-// Create the visited state objct
+// Create the visited state object
 $visited_state = new VisitedState($security, $model_factory);
 
 // Create the basic authentication provider and add it to the security object
