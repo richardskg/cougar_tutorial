@@ -13,7 +13,7 @@ abstract class StateBase
 	/**
 	 * @Alias id
 	 * @Alias abbreviation
-     * @Alias postalcode
+     * @Alias postalCode
 	 * @Column StateID
 	 * @NotNull
 	 * @var string State abbreviation/postal code
