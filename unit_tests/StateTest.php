@@ -115,12 +115,8 @@ class StateTest extends \PHPUnit_Framework_TestCase {
             ->method("StatePdo")
             ->with($params, null, true)
             ->will($this->returnValue($state_pdo_model));
-        $this->factory->expects($this->once())
-            ->method("State")
-            ->with($state_pdo_model, null, true)
-            ->will($this->returnValue($state_model));
 
         $state = $this->object->getState("UT");
-        $this->assertInstanceOf("\\CougarTutorial\\Models\\State", $state);
+        $this->assertInstanceOf("\\CougarTutorial\\Models\\StatePdo", $state);
     }
 }
