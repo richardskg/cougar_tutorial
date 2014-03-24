@@ -81,8 +81,9 @@ class State implements iState
         $auth_query->object = $state_model;
         $this->security->authorize("action", $auth_query);
 
-        // Return a model detached from the database
-        return $this->factory->State($state_model);
+        // Return the model in non-persistent mode
+        $state_model->endPersistence();
+        return $state_model;
     }
 
 
