@@ -17,6 +17,9 @@ require_once(__DIR__ . "/../../init.php");
 // Create a new Security context (required by Model Factory and Rest Service)
 $security = new Security();
 
+// Create the AnnotatedWebService object to handle handle incoming REST requests
+$service = new AnnotatedRestService($security);
+
 // Add the authorization providers to the security context
 $security->addAuthorizationProvider(new ActionAuthorizationProvider());
 $security->addAuthorizationProvider(new StateModelAuthorizationProvider());
@@ -36,9 +39,6 @@ $user = new User($security, $model_factory);
 
 // Create the State object
 $state = new State($security, $model_factory);
-
-// Create the AnnotatedWebService object to handle handle incoming REST requests
-$service = new AnnotatedRestService($security);
 
 // Create the basic authentication provider and add it to the security object
 $authentication_provider =
