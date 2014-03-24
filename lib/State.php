@@ -68,8 +68,9 @@ class State implements iState
         // Get the state model for the given state
         $state_model = $this->factory->StatePdo(array("id" => $id));
 
-        // Return a model detached from the database
-        return $this->factory->State($state_model);
+        // Return the model in non-persistent mode
+        $state_model->endPersistence();
+        return $state_model;
     }
 
 
