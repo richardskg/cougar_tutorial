@@ -13,6 +13,9 @@ require_once(__DIR__ . "/../../init.php");
 // Create a new Security context (required by Model Factory and Rest Service)
 $security = new Security();
 
+// Create the AnnotatedWebService object to handle handle incoming REST requests
+$service = new AnnotatedRestService($security);
+
 // Create the application cache object
 $cache = CacheFactory::getApplicationCache();
 
@@ -27,9 +30,6 @@ $user = new User($security);
 
 // Create the State object
 $state = new State($security, $model_factory);
-
-// Create the AnnotatedWebService object to handle handle incoming REST requests
-$service = new AnnotatedRestService($security);
 
 // Tell the service object to bind web services from our User and State objects
 $service->bindFromObject($user);
