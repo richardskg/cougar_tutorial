@@ -38,18 +38,39 @@ class CharTestPdo extends CharTestBase
     // Get the results
     $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
 
-    // $results = $this->__pdo->query($sql_statement)->fetchAll(\PDO::FETCH_ASSOC);
+// ----------------------------------------------
+
+    // Perform the query
+    $charTest = $this->query(array(
+      new QueryParameter("id", $id)
+    ), "CougarTutorial\\Characters\\CharTest");
+
+    echo '<p>count($charTest): ' . count($charTest);
+
+    // If authentication was successful, we should get one record;
+    // no more, no less
+    if (count($charTest) == 1) {
+      // Grab the identity record and add the id parameter
+      $identity = $charTest[0]->__toArray();
+
+      echo '<p> $identity[SimpleString]: ' . $identity['SimpleString'];
+
+      
+    }
+
+// --------------------------------------
 
     echo '<p>count($result): ' . count($results);
 
     if (count($results) > 0) {
       // Grab the identity record and add the id parameter
-      echo 'count($results): ' . count($results) .'';
+      echo '<p>count($results): ' . count($results) . '';
       $charTest = $results[0];
 
-      return $charTest['SimpleString'];
+      return $this->decodeString($charTest['SimpleString']);
     } else {
-      $simpleString = 'filler so we can see if the non-breaking spaces are working. ✔ § µ ' . json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4';
+      $simpleString = $this->encodeString('filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
+      json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4');
 
       $this->id = $id;
       $this->SimpleString = $simpleString;
@@ -64,7 +85,7 @@ class CharTestPdo extends CharTestBase
 
       $this->__pdo->commit();
       echo '<p>simple->save() finished...';
-      return $this->SimpleString;
+      return $this->decodeString($this->SimpleString);
     }
 
 
@@ -73,6 +94,8 @@ class CharTestPdo extends CharTestBase
   public function encodeString(string $source): string
   {
     $encoded = json_encode($source);
+
+    // Remove the leading and traling " that json_encode adds
     $encoded = substr($encoded, 1);
     $encoded = substr($encoded, 0, -1);
     return $encoded;
@@ -80,6 +103,7 @@ class CharTestPdo extends CharTestBase
 
   public function decodeString(string $source): string
   {
+    // We need to add leading and trailing " so json_decode will recognize the string.
     return json_decode(('"' . $source . '"'), true);
   }
 }
