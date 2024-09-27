@@ -25,70 +25,38 @@ class CharTestPdo extends CharTestBase
 
   public function getSampleString(int $id): string
   {
-    // return 'filler so we can see if the non-breaking spaces are working. ✔ § µ '.json_decode('"\u00a0\u00a0\u00a0\u00a0"').'<-nbsp x4';
-    $sql_statement = "SELECT id, SimpleString, Count " .
-      "FROM CharTest " .
-      "WHERE id = :id ";
-
-    // Prepare and execute the statement
-    $statement = $this->__pdo->prepare($sql_statement);
-    $statement->execute(array("id" => $id));
-
-
-    // Get the results
-    $results = $statement->fetchAll(\PDO::FETCH_ASSOC);
-
-// ----------------------------------------------
-
     // Perform the query
+    // This will return an array of CharTest. There should only be one since we 
+    // search by id.
     $charTest = $this->query(array(
       new QueryParameter("id", $id)
     ), "CougarTutorial\\Characters\\CharTest");
 
-    echo '<p>count($charTest): ' . count($charTest);
-
-    // If authentication was successful, we should get one record;
-    // no more, no less
+    // $results will be a CharTest object.
+    $results = null;
     if (count($charTest) == 1) {
-      // Grab the identity record and add the id parameter
-      $identity = $charTest[0]->__toArray();
-
-      echo '<p> $identity[SimpleString]: ' . $identity['SimpleString'];
-
-      
+      $results = $charTest[0];
     }
 
-// --------------------------------------
-
-    echo '<p>count($result): ' . count($results);
-
-    if (count($results) > 0) {
-      // Grab the identity record and add the id parameter
-      echo '<p>count($results): ' . count($results) . '';
-      $charTest = $results[0];
-
-      return $this->decodeString($charTest['SimpleString']);
+    if ($results) {
+      return $this->decodeString($results->SimpleString);
     } else {
-      $simpleString = $this->encodeString('filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
-      json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4');
+      $simpleString = 'filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
+                      json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4';
 
       $this->id = $id;
       $this->SimpleString = $simpleString;
       $this->Count = 1;
-
-      echo '<p> about to save';
-
       // Save the record
       $this->save();
-
-      echo '<p> calling $pdo->commit';
-
       $this->__pdo->commit();
-      echo '<p>simple->save() finished...';
-      return $this->decodeString($this->SimpleString);
+      // Now read it back so we can return the same as a query
+      $charTest = $this->query(array(
+        new QueryParameter("id", $id)
+      ), "CougarTutorial\\Characters\\CharTest");
+
+      return $this->decodeString($charTest[0]->SimpleString);
     }
-
-
   }
 
   public function encodeString(string $source): string

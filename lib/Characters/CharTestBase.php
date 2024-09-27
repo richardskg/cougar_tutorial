@@ -4,7 +4,7 @@ namespace CougarTutorial\Characters;
 
 use Cougar\Model\PdoModel;
 /**
- * Defines the properties and data constraints of the State table.
+ * Defines the properties and data constraints of the CharTest table.
  * 
  * @CaseInsensitive
  * @Views identity

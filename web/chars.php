@@ -21,10 +21,13 @@ $security->addAuthorizationProvider(new UserModelAuthorizationProvider());
 $cache = CacheFactory::getApplicationCache();
 
 // Create the database connection
-$pdo = new PDO("sqlite:" . __DIR__ . "/../db/cougar_tutorial.db");
+// $pdo = new PDO("sqlite:" . __DIR__ . "/../db/cougar_tutorial.db");
+// $pdo = new PDO('mysql:dbname=cougar_tutorial;host=127.0.0.1', "root");
+$pdo = new PDO('mysql:dbname=cougar_tutorial_ascii;host=127.0.0.1', "root");
 
 // Create a new UserPdo object
-$simple = new CharTestPdo($security, $cache, $pdo);
+$simple = new CharTestPdo($security, $cache, $pdo, null,
+                          null, true, "unknown");
 
 $chars = $simple->getSampleString(1);
 $encoded_chars =  $simple->encodeString($chars);
