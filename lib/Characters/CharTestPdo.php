@@ -25,38 +25,43 @@ class CharTestPdo extends CharTestBase
 
   public function getSampleString(int $id): string
   {
-    // Perform the query
-    // This will return an array of CharTest. There should only be one since we 
-    // search by id.
-    $charTest = $this->query(array(
-      new QueryParameter("id", $id)
-    ), "CougarTutorial\\Characters\\CharTest");
 
-    // $results will be a CharTest object.
-    $results = null;
-    if (count($charTest) == 1) {
-      $results = $charTest[0];
-    }
+    $simpleString = 'filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
+    json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4';
 
-    if ($results) {
-      return $this->decodeString($results->SimpleString);
-    } else {
-      $simpleString = 'filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
-                      json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4';
+    // // Perform the query
+    // // This will return an array of CharTest. There should only be one since we 
+    // // search by id.
+    // $charTest = $this->query(array(
+    //   new QueryParameter("id", $id)
+    // ), "CougarTutorial\\Characters\\CharTest");
 
-      $this->id = $id;
-      $this->SimpleString = $simpleString;
-      $this->Count = 1;
-      // Save the record
-      $this->save();
-      $this->__pdo->commit();
-      // Now read it back so we can return the same as a query
-      $charTest = $this->query(array(
-        new QueryParameter("id", $id)
-      ), "CougarTutorial\\Characters\\CharTest");
+    // // $results will be a CharTest object.
+    // $results = null;
+    // if (count($charTest) == 1) {
+    //   $results = $charTest[0];
+    // }
 
-      return $this->decodeString($charTest[0]->SimpleString);
-    }
+    // if ($results) {
+    //   return $this->decodeString($results->SimpleString);
+    // } else {
+    //   $simpleString = 'filler so we can see if the non-breaking spaces are working. ✔ § µ ' .
+    //                   json_decode('"\u00a0\u00a0\u00a0\u00a0"') . '<-nbsp x4';
+
+    //   $this->id = $id;
+    //   $this->SimpleString = $simpleString;
+    //   $this->Count = 1;
+    //   // Save the record
+    //   $this->save();
+    //   $this->__pdo->commit();
+    //   // Now read it back so we can return the same as a query
+    //   $charTest = $this->query(array(
+    //     new QueryParameter("id", $id)
+    //   ), "CougarTutorial\\Characters\\CharTest");
+
+    //   return $this->decodeString($charTest[0]->SimpleString);
+    // }
+    return $simpleString;
   }
 
   public function encodeString(string $source): string
